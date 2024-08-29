@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GREEN-API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333333;
+        }
+        label {
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        input[type="text"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            border: 1px solid #cccccc;
+            border-radius: 4px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            background-color: #4CAF50;
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #response {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #cccccc;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>GREEN-API by Sain.Kramcha</h1>
+
+     
+        <label for="idInstance">idInstance:</label>
+        <input type="text" id="idInstance" placeholder="Введите idInstance">
+
+        <label for="apiTokenInstance">ApiTokenInstance:</label>
+        <input type="text" id="apiTokenInstance" placeholder="Введите ApiTokenInstance">
+
+        <hr>
+
+        
+        <button onclick="getSettings()">getSettings</button>
+        <button onclick="getStateInstance()">getStateInstance</button>
+
+        <hr>
+
+       
+        <label for="recipientNumber">Номер получателя:</label>
+        <input type="text" id="recipientNumber" placeholder="Введите номер получателя в формате 79123456789">
+
+        <label for="messageText">Текст сообщения:</label>
+        <input type="text" id="messageText" placeholder="Введите текст сообщения">
+
+        <button onclick="sendMessage()">sendMessage</button>
+
+        <hr>
+
+       
+        <label for="fileUrl">URL файла:</label>
+        <input type="text" id="fileUrl" placeholder="Введите URL файла">
+
+        <label for="fileName">Имя файла:</label>
+        <input type="text" id="fileName" placeholder="Введите имя файла (например, file.png)">
+
+        <label for="fileCaption">Подпись к файлу:</label>
+        <input type="text" id="fileCaption" placeholder="Введите подпись к файлу (необязательно)">
+
+        <button onclick="sendFileByUrl()">sendFileByUrl</button>
+
+        <hr>
+
+        <label for="response">Ответ от сервера:</label>
+        <div id="response" readonly></div>
+    </div>
+
+    <script>
+        function getCredentials() {
+            const idInstance = document.getElementById('idInstance').value.trim();
+            const apiTokenInstance = document.getElementById('apiTokenInstance').value.trim();
+
+            if (!idInstance || !apiTokenInstance) {
+                alert('Пожалуйста, введите idInstance и ApiTokenInstance.');
+                throw new Error('Missing credentials');
+            }
+
+            return { idInstance, apiTokenInstance };
+        }
+
+        function displayResponse(data) {
+            const responseDiv = document.getElementById('response');
+            responseDiv.textContent = JSON.stringify(data, null, 2);
+        }
+
+        async function getSettings() {
+            try {
+                const { idInstance, apiTokenInstance } = getCredentials();
+
+                const response = await fetch(`https://api.green-api.com/waInstance${idInstance}/getSettings/${apiTokenInstance}`);
+                const data = await response.json();
+
+                displayResponse(data);
+            } catch (error) {
+                displayResponse({ error: error.message });
+            }
+        }
+
+        async function getStateInstance() {
+            try {
+                const { idInstance, apiTokenInstance } = getCredentials();
+
+                const response = await fetch(`https://api.green-api.com/waInstance${idInstance}/getStateInstance/${apiTokenInstance}`);
+                const data = await response.json();
+
+                displayResponse(data);
+            } catch (error) {
+                displayResponse({ error: error.message });
+            }
+        }
+
+        async function sendMessage() {
+            try {
+                const { idInstance, apiTokenInstance } = getCredentials();
+                const chatId = document.getElementById('recipientNumber').value.trim() + '@c.us';
+                const message = document.getElementById('messageText').value.trim();
+
+                if (!/^\d{11}$/.test(document.getElementById('recipientNumber').value.trim())) {
+                    alert('Пожалуйста, введите корректный номер получателя в формате 79123456789.');
+                    return;
+                }
+
+                const response = await fetch(`https://api.green-api.com/waInstance${idInstance}/sendMessage/${apiTokenInstance}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        chatId,
+                        message
+                    })
+                });
+
+                const data = await response.json();
+
+                displayResponse(data);
+            } catch (error) {
+                displayResponse({ error: error.message });
+            }
+        }
+
+        async function sendFileByUrl() {
+            try {
+                const { idInstance, apiTokenInstance } = getCredentials();
+                const chatId = document.getElementById('recipientNumber').value.trim() + '@c.us';
+                const urlFile = document.getElementById('fileUrl').value.trim();
+                const fileName = document.getElementById('fileName').value.trim();
+                const caption = document.getElementById('fileCaption').value.trim();
+
+                if (!/^\d{11}$/.test(document.getElementById('recipientNumber').value.trim())) {
+                    alert('Пожалуйста, введите корректный номер получателя в формате 79123456789.');
+                    return;
+                }
+
+                if (!urlFile) {
+                    alert('Пожалуйста, введите URL файла.');
+                    return;
+                }
+
+                if (!fileName) {
+                    alert('Пожалуйста, введите имя файла.');
+                    return;
+                }
+
+                const response = await fetch(`https://api.green-api.com/waInstance${idInstance}/sendFileByUrl/${apiTokenInstance}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        chatId,
+                        urlFile,
+                        fileName,
+                        caption
+                    })
+                });
+
+                const data = await response.json();
+
+                displayResponse(data);
+            } catch (error) {
+                displayResponse({ error: error.message });
+            }
+        }
+    </script>
+
+</body>
+</html>
